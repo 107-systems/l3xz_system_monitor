@@ -127,8 +127,10 @@ void Node::watchdog_loop()
   std_msgs::msg::Int8 light_mode_msg;
   light_mode_msg.data = LIGHT_MODE_WHITE;
 
-  if (_system_health == SystemHealth::Nominal)
+  if      (_system_health == SystemHealth::Nominal)
     light_mode_msg.data = LIGHT_MODE_AMBER;
+  else if (_system_health == SystemHealth::Degraded)
+    light_mode_msg.data = LIGHT_MODE_RED;
 
   _light_mode_pub->publish(light_mode_msg);
 }
