@@ -12,30 +12,36 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 #######################################################################################
+add_subdirectory(external/json/current)
+#######################################################################################
 include_directories(${L3XZ_WATCHDOG_TARGET}
   include
 )
 #######################################################################################
 add_executable(${L3XZ_WATCHDOG_TARGET}
+  src/HeartbeatMonitor.cpp
   src/Node.cpp
   src/main.cpp
 )
 #######################################################################################
 target_compile_features(${L3XZ_WATCHDOG_TARGET} PRIVATE cxx_std_17)
 #######################################################################################
+target_link_libraries(${L3XZ_WATCHDOG_TARGET} NLOHMANN_JSON)
+#######################################################################################
 ament_target_dependencies(${L3XZ_WATCHDOG_TARGET} rclcpp std_msgs)
 #######################################################################################
-if(BUILD_TESTING)
-  find_package(ament_lint_auto REQUIRED)
-  # the following line skips the linter which checks for copyrights
-  # comment the line when a copyright and license is added to all source files
-  set(ament_cmake_copyright_FOUND TRUE)
-  # the following line skips cpplint (only works in a git repo)
-  # comment the line when this package is in a git repo and when
-  # a copyright and license is added to all source files
-  set(ament_cmake_cpplint_FOUND TRUE)
-  ament_lint_auto_find_test_dependencies()
-endif()
+install(TARGETS
+  ${PROJECT_NAME}_node
+  DESTINATION lib/${PROJECT_NAME}
+)
+install(DIRECTORY
+  config
+  DESTINATION share/${PROJECT_NAME}
+)
+install(DIRECTORY
+  launch
+  DESTINATION share/${PROJECT_NAME}
+)
 #######################################################################################
 ament_package()
 #######################################################################################

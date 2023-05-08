@@ -28,9 +28,15 @@ ros2 launch l3xz_watchdog watchdog.py
 
 #### Interface Documentation
 ##### Subscribed Topics
-| Default name | Type |
-|:-:|:-:|
+|        Default name       |                                       Type                                  |
+|:-------------------------:|:----------------------------------------------------------------------------:|
+| `/l3xz/${node}/heartbeat` | [`std_msgs/UInt64`](https://docs.ros2.org/foxy/api/std_msgs/msg/UInt64.html) |
 
 ##### Published Topics
 | Default name | Type |
 |:-:|:-:|
+
+##### Parameters
+|      Name      |         Default         | Description                                                               |
+|:--------------:|:-----------------------:|---------------------------------------------------------------------------|
+| `config_file` | `watchdog-config.json`  | Complete file path to the JSON file containing the nodes to be monitored. |

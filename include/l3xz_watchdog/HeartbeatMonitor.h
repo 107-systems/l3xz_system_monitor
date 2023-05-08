@@ -10,13 +10,13 @@
  * INCLUDE
  **************************************************************************************/
 
-#include <map>
-#include <string>
 #include <chrono>
+#include <string>
+#include <memory>
 
 #include <rclcpp/rclcpp.hpp>
 
-#include "HeartbeatMonitor.h"
+#include <std_msgs/msg/u_int64.hpp>
 
 /**************************************************************************************
  * NAMESPACE
@@ -29,21 +29,24 @@ namespace l3xz
  * CLASS DECLARATION
  **************************************************************************************/
 
-class Node : public rclcpp::Node
+class HeartbeatMonitor
 {
 public:
-  Node();
-  ~Node();
+  typedef std::shared_ptr<HeartbeatMonitor> SharedPtr;
+
+  HeartbeatMonitor(
+    std::string const & heartbeat_topic,
+    std::chrono::milliseconds const heartbeat_timeout,
+    rclcpp::Node & node_hdl);
+
+
+  bool isTimeout() const;
+
 
 private:
-  std::map<std::string, HeartbeatMonitor::SharedPtr> _heartbeat_monitor_map;
-
-  std::chrono::steady_clock::time_point _prev_watchdog_loop_timepoint;
-  static std::chrono::milliseconds constexpr WATCHDOG_LOOP_RATE{100};
-  rclcpp::TimerBase::SharedPtr _watchdog_loop_timer;
-  void watchdog_loop();
-
-  HeartbeatMonitor::SharedPtr create_heartbeat_monitor(std::string const & node, std::chrono::milliseconds const node_timeout);
+  std::chrono::milliseconds const _heartbeat_timeout;
+  std::chrono::steady_clock::time_point _prev_heartbeat_timepoint;
+  rclcpp::Subscription<std_msgs::msg::UInt64>::SharedPtr _heartbeat_sub;
 };
 
 /**************************************************************************************

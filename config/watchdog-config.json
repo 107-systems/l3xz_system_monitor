@@ -1,0 +1,20 @@
+{
+  "node_list": [
+    {
+      "node": "l3xz_gait_ctrl",
+      "node_timeout_ms": 500
+    },
+    {
+      "node": "l3xz_head_ctrl",
+      "node_timeout_ms": 500
+    },
+    {
+      "node": "ros2_cyphal_bridge",
+      "node_timeout_ms": 500
+    },
+    {
+      "node": "ros2_dynamixel_bridge",
+      "node_timeout_ms": 500
+    }
+  ]
+}
