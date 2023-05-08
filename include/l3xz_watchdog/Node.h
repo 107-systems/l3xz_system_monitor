@@ -16,6 +16,7 @@
 
 #include <rclcpp/rclcpp.hpp>
 
+#include <std_msgs/msg/bool.hpp>
 #include <std_msgs/msg/int8.hpp>
 
 #include "HeartbeatMonitor.h"
@@ -45,6 +46,9 @@ private:
   SystemHealth _system_health;
 
   std::map<std::string, HeartbeatMonitor::SharedPtr> _heartbeat_monitor_map;
+
+  rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr _estop_sub;
+  bool _is_estop_pressed;
 
   static int8_t constexpr LIGHT_MODE_OFF   = 0;
   static int8_t constexpr LIGHT_MODE_RED   = 1;

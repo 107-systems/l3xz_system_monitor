@@ -28,9 +28,10 @@ ros2 launch l3xz_watchdog watchdog.py
 
 #### Interface Documentation
 ##### Subscribed Topics
-|        Default name       |                                       Type                                  |
+|       Default name        |                                     Type                                     |
 |:-------------------------:|:----------------------------------------------------------------------------:|
 | `/l3xz/${node}/heartbeat` | [`std_msgs/UInt64`](https://docs.ros2.org/foxy/api/std_msgs/msg/UInt64.html) |
+|   `/l3xz/estop/actual`    |   [`std_msgs/Bool`](https://docs.ros2.org/foxy/api/std_msgs/msg/Bool.html)   |
 
 ##### Published Topics
 |        Default name       |                                   Type                                   |

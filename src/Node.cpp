@@ -29,6 +29,7 @@ namespace l3xz
 Node::Node()
 : rclcpp::Node("l3xz_watchdog")
 , _system_health{SystemHealth::Nominal}
+, _is_estop_pressed{false}
 , _prev_watchdog_loop_timepoint{std::chrono::steady_clock::now()}
 {
   declare_parameter("config_file", "watchdog-config.json");
@@ -54,6 +55,14 @@ Node::Node()
 
     _heartbeat_monitor_map[node] = create_heartbeat_monitor(node, std::chrono::milliseconds(timeout_ms));
   }
+
+  _estop_sub = create_subscription<std_msgs::msg::Bool>(
+    "/l3xz/estop/actual",
+    1,
+    [this](std_msgs::msg::Bool::SharedPtr const msg)
+    {
+      _is_estop_pressed = msg->data;
+    });
 
   /* Create publisher object to send the desired
    * light mode to the auxiliary controller of
@@ -129,8 +138,16 @@ void Node::watchdog_loop()
 
   if      (_system_health == SystemHealth::Nominal)
     light_mode_msg.data = LIGHT_MODE_AMBER;
-  else if (_system_health == SystemHealth::Degraded)
+
+  if (_system_health == SystemHealth::Degraded)
     light_mode_msg.data = LIGHT_MODE_RED;
+  else
+  {
+    if (_is_estop_pressed)
+      light_mode_msg.data = LIGHT_MODE_GREEN;
+    else
+      light_mode_msg.data = LIGHT_MODE_AMBER;
+  }
 
   _light_mode_pub->publish(light_mode_msg);
 }
