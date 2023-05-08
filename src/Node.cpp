@@ -98,12 +98,20 @@ void Node::watchdog_loop()
    * of those.
    */
   bool is_heartbeat_timeout = false;
-  for (auto [name, monitor] : _heartbeat_monitor_map)
+  std::stringstream node_timeout_list_ss;
+  for (auto [node, monitor] : _heartbeat_monitor_map)
     if (monitor->isTimeout())
     {
       is_heartbeat_timeout = true;
-      RCLCPP_ERROR(get_logger(), "Node \"%s\" heart beat signal has timed out.", name.c_str());
+      node_timeout_list_ss << "\"" << node << "\" ";
     }
+
+  if (is_heartbeat_timeout)
+    RCLCPP_ERROR_THROTTLE(get_logger(),
+                          *get_clock(),
+                          1000,
+                          "heartbeat signal has timed out for nodes: { %s}",
+                          node_timeout_list_ss.str().c_str());
 
   /* Update system health based on monitoring
    * all relevant nodes.
