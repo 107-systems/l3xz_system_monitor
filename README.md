@@ -33,8 +33,9 @@ ros2 launch l3xz_watchdog watchdog.py
 | `/l3xz/${node}/heartbeat` | [`std_msgs/UInt64`](https://docs.ros2.org/foxy/api/std_msgs/msg/UInt64.html) |
 
 ##### Published Topics
-| Default name | Type |
-|:-:|:-:|
+|        Default name       |                                   Type                                   |
+|:-------------------------:|:------------------------------------------------------------------------:|
+| `/l3xz/light_mode/target` | [`std_msgs/Int8`](https://docs.ros2.org/foxy/api/std_msgs/msg/Int8.html) |
 
 ##### Parameters
 |      Name      |         Default         | Description                                                               |

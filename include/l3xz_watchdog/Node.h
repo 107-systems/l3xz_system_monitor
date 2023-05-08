@@ -16,6 +16,8 @@
 
 #include <rclcpp/rclcpp.hpp>
 
+#include <std_msgs/msg/int8.hpp>
+
 #include "HeartbeatMonitor.h"
 
 /**************************************************************************************
@@ -36,7 +38,22 @@ public:
   ~Node();
 
 private:
+  enum class SystemHealth
+  {
+    Nominal, Degraded
+  };
+  SystemHealth _system_health;
+
   std::map<std::string, HeartbeatMonitor::SharedPtr> _heartbeat_monitor_map;
+
+  static int8_t constexpr LIGHT_MODE_OFF   = 0;
+  static int8_t constexpr LIGHT_MODE_RED   = 1;
+  static int8_t constexpr LIGHT_MODE_GREEN = 2;
+  static int8_t constexpr LIGHT_MODE_BLUE  = 3;
+  static int8_t constexpr LIGHT_MODE_WHITE = 4;
+  static int8_t constexpr LIGHT_MODE_AMBER = 5;
+
+  rclcpp::Publisher<std_msgs::msg::Int8>::SharedPtr _light_mode_pub;
 
   std::chrono::steady_clock::time_point _prev_watchdog_loop_timepoint;
   static std::chrono::milliseconds constexpr WATCHDOG_LOOP_RATE{100};

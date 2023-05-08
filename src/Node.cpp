@@ -28,6 +28,7 @@ namespace l3xz
 
 Node::Node()
 : rclcpp::Node("l3xz_watchdog")
+, _system_health{SystemHealth::Nominal}
 , _prev_watchdog_loop_timepoint{std::chrono::steady_clock::now()}
 {
   declare_parameter("config_file", "watchdog-config.json");
@@ -53,6 +54,12 @@ Node::Node()
 
     _heartbeat_monitor_map[node] = create_heartbeat_monitor(node, std::chrono::milliseconds(timeout_ms));
   }
+
+  /* Create publisher object to send the desired
+   * light mode to the auxiliary controller of
+   * L3X-Z.
+   */
+  _light_mode_pub = create_publisher<std_msgs::msg::Int8>("/l3xz/light_mode/target", 1);
 
   /* Setup periodically called function to check the
    * online status (determined via regular received
@@ -90,12 +97,32 @@ void Node::watchdog_loop()
    * check if a heartbeat timeout has occurred on any
    * of those.
    */
+  bool is_heartbeat_timeout = false;
   for (auto [name, monitor] : _heartbeat_monitor_map)
-  {
-    if (monitor->isTimeout()) {
+    if (monitor->isTimeout())
+    {
+      is_heartbeat_timeout = true;
       RCLCPP_ERROR(get_logger(), "Node \"%s\" heart beat signal has timed out.", name.c_str());
     }
-  }
+
+  /* Update system health based on monitoring
+   * all relevant nodes.
+   */
+  if (is_heartbeat_timeout)
+    _system_health = SystemHealth::Degraded;
+  else
+    _system_health = SystemHealth::Nominal;
+
+  /* Set the light mode of L3X-Z dependent
+   * on the overall system health and state.
+   */
+  std_msgs::msg::Int8 light_mode_msg;
+  light_mode_msg.data = LIGHT_MODE_WHITE;
+
+  if (_system_health == SystemHealth::Nominal)
+    light_mode_msg.data = LIGHT_MODE_AMBER;
+
+  _light_mode_pub->publish(light_mode_msg);
 }
 
 HeartbeatMonitor::SharedPtr Node::create_heartbeat_monitor(std::string const & node, std::chrono::milliseconds const node_timeout)
