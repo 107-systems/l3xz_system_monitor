@@ -109,7 +109,7 @@ void Node::watchdog_loop()
   bool is_heartbeat_timeout = false;
   std::stringstream node_timeout_list_ss;
   for (auto [node, monitor] : _heartbeat_monitor_map)
-    if (monitor->isTimeout())
+    if (auto [is_timeout, timeout_duration] = monitor->isTimeout(); is_timeout)
     {
       is_heartbeat_timeout = true;
       node_timeout_list_ss << "\"" << node << "\" ";
@@ -152,14 +152,12 @@ void Node::watchdog_loop()
   _light_mode_pub->publish(light_mode_msg);
 }
 
-HeartbeatMonitor::SharedPtr Node::create_heartbeat_monitor(std::string const & node, std::chrono::milliseconds const node_timeout)
+heartbeat::Monitor::SharedPtr Node::create_heartbeat_monitor(std::string const & node, std::chrono::milliseconds const node_timeout)
 {
   std::stringstream heartbeat_topic;
   heartbeat_topic << "/l3xz/" << node << "/heartbeat";
 
-  return std::make_shared<HeartbeatMonitor>(heartbeat_topic.str(),
-                                            node_timeout,
-                                            *this);
+  return heartbeat::Monitor::create(*this, heartbeat_topic.str(), node_timeout);
 }
 
 /**************************************************************************************
