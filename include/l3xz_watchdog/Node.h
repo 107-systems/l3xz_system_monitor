@@ -19,7 +19,7 @@
 #include <std_msgs/msg/bool.hpp>
 #include <std_msgs/msg/int8.hpp>
 
-#include "HeartbeatMonitor.h"
+#include <ros2_heartbeat/Monitor.h>
 
 /**************************************************************************************
  * NAMESPACE
@@ -45,7 +45,7 @@ private:
   };
   SystemHealth _system_health;
 
-  std::map<std::string, HeartbeatMonitor::SharedPtr> _heartbeat_monitor_map;
+  std::map<std::string, heartbeat::Monitor::SharedPtr> _heartbeat_monitor_map;
 
   rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr _estop_sub;
   bool _is_estop_pressed;
@@ -64,7 +64,7 @@ private:
   rclcpp::TimerBase::SharedPtr _watchdog_loop_timer;
   void watchdog_loop();
 
-  HeartbeatMonitor::SharedPtr create_heartbeat_monitor(std::string const & node, std::chrono::milliseconds const node_timeout);
+  heartbeat::Monitor::SharedPtr create_heartbeat_monitor(std::string const & node, std::chrono::milliseconds const node_timeout);
 };
 
 /**************************************************************************************

@@ -11,6 +11,7 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(ros2_heartbeat REQUIRED)
 #######################################################################################
 add_subdirectory(external/json/current)
 #######################################################################################
@@ -19,7 +20,6 @@ include_directories(${L3XZ_WATCHDOG_TARGET}
 )
 #######################################################################################
 add_executable(${L3XZ_WATCHDOG_TARGET}
-  src/HeartbeatMonitor.cpp
   src/Node.cpp
   src/main.cpp
 )
@@ -28,7 +28,7 @@ target_compile_features(${L3XZ_WATCHDOG_TARGET} PRIVATE cxx_std_17)
 #######################################################################################
 target_link_libraries(${L3XZ_WATCHDOG_TARGET} NLOHMANN_JSON)
 #######################################################################################
-ament_target_dependencies(${L3XZ_WATCHDOG_TARGET} rclcpp std_msgs)
+ament_target_dependencies(${L3XZ_WATCHDOG_TARGET} rclcpp std_msgs ros2_heartbeat)
 #######################################################################################
 install(TARGETS
   ${PROJECT_NAME}_node
