@@ -1,6 +1,14 @@
 {
   "node_list": [
     {
+      "node": "l3xz_joy",
+      "node_timeout_ms": 500
+    },
+    {
+      "node": "l3xz_teleop",
+      "node_timeout_ms": 500
+    },
+    {
       "node": "l3xz_gait_ctrl",
       "node_timeout_ms": 500
     },
