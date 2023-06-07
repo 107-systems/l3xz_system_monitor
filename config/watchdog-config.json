@@ -25,7 +25,11 @@
       "node_timeout_ms": 500
     },
     {
-      "node": "l3xz_hydraulic_ctrl",
+      "node": "l3xz_pump_ctrl",
+      "node_timeout_ms": 500
+    },
+    {
+      "node": "l3xz_valve_ctrl",
       "node_timeout_ms": 500
     }
   ]
