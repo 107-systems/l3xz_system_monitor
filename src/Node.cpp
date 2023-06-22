@@ -30,7 +30,6 @@ Node::Node()
 : rclcpp::Node("l3xz_watchdog")
 , _system_health{SystemHealth::Nominal}
 , _is_estop_pressed{false}
-, _prev_watchdog_loop_timepoint{std::chrono::steady_clock::now()}
 {
   declare_parameter("config_file", "watchdog-config.json");
 
@@ -74,6 +73,8 @@ Node::Node()
    * online status (determined via regular received
    * heartbeat messages) of all nodes under monitoring.
    */
+  _watchdog_loop_rate_monitor = loop_rate::Monitor::create
+    (WATCHDOG_LOOP_RATE, std::chrono::milliseconds(1));
   _watchdog_loop_timer = create_wall_timer
     (std::chrono::milliseconds(WATCHDOG_LOOP_RATE.count()), [this]() { this->watchdog_loop(); });
 
@@ -91,16 +92,17 @@ Node::~Node()
 
 void Node::watchdog_loop()
 {
-  auto const now = std::chrono::steady_clock::now();
-  auto const watchdog_loop_rate = (now - _prev_watchdog_loop_timepoint);
-  if (watchdog_loop_rate > (WATCHDOG_LOOP_RATE + std::chrono::milliseconds(10)))
+  _watchdog_loop_rate_monitor->update();
+  if (auto const [timeout, opt_timeout_duration] = _watchdog_loop_rate_monitor->isTimeout();
+    timeout == loop_rate::Monitor::Timeout::Yes)
+  {
     RCLCPP_WARN_THROTTLE(get_logger(),
                          *get_clock(),
                          1000,
                          "watchdog_loop should be called every %ld ms, but is %ld ms instead",
                          WATCHDOG_LOOP_RATE.count(),
-                         std::chrono::duration_cast<std::chrono::milliseconds>(watchdog_loop_rate).count());
-  _prev_watchdog_loop_timepoint = now;
+                         opt_timeout_duration.value().count());
+  }
 
   /* Iterate over all registered heartbeat monitors and
    * check if a heartbeat timeout has occurred on any

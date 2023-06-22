@@ -20,6 +20,7 @@
 #include <std_msgs/msg/int8.hpp>
 
 #include <ros2_heartbeat/Monitor.h>
+#include <ros2_loop_rate_monitor/Monitor.h>
 
 /**************************************************************************************
  * NAMESPACE
@@ -59,8 +60,8 @@ private:
 
   rclcpp::Publisher<std_msgs::msg::Int8>::SharedPtr _light_mode_pub;
 
-  std::chrono::steady_clock::time_point _prev_watchdog_loop_timepoint;
   static std::chrono::milliseconds constexpr WATCHDOG_LOOP_RATE{100};
+  loop_rate::Monitor::SharedPtr _watchdog_loop_rate_monitor;
   rclcpp::TimerBase::SharedPtr _watchdog_loop_timer;
   void watchdog_loop();
 
