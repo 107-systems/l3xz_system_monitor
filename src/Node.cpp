@@ -50,6 +50,8 @@ Node::Node()
       heartbeat_topic.str(),
       [this, node]()
       {
+        RCLCPP_ERROR(get_logger(), "liveliness lost for \"%s\".", node.c_str());
+
         auto const citer = std::find(_heartbeat_liveliness_lost_list.cbegin(),
                                      _heartbeat_liveliness_lost_list.cend(),
                                      node);
@@ -58,6 +60,8 @@ Node::Node()
       },
       [this, node]()
       {
+        RCLCPP_INFO(get_logger(), "liveliness gained for \"%s\".", node.c_str());
+
         auto const citer = std::find(_heartbeat_liveliness_lost_list.cbegin(),
                                      _heartbeat_liveliness_lost_list.cend(),
                                      node);
@@ -137,11 +141,11 @@ void Node::watchdog_loop()
 
   bool const is_heartbeat_timeout = _heartbeat_liveliness_lost_list.size() > 0;
   if (is_heartbeat_timeout)
-    RCLCPP_ERROR_THROTTLE(get_logger(),
-                          *get_clock(),
-                          1000,
-                          "heartbeat signal has timed out for nodes: { %s}",
-                          heartbeat_no_liveliness_list_ss.str().c_str());
+    RCLCPP_WARN_THROTTLE(get_logger(),
+                         *get_clock(),
+                         1000,
+                         "liveliness lost for nodes: { %s}",
+                         heartbeat_no_liveliness_list_ss.str().c_str());
 
   /* Update system health based on monitoring
    * all relevant nodes.
