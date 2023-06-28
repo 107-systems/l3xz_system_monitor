@@ -141,14 +141,14 @@ void Node::watchdog_loop()
     if (liveliness == NodeLiveliness::Offline)
     {
       is_heartbeat_timeout = true;
-      heartbeat_no_liveliness_list_ss << "\"" << node << "\" ";
+      heartbeat_no_liveliness_list_ss << "\n\t" << node;
     }
 
   if (is_heartbeat_timeout)
-    RCLCPP_INFO_THROTTLE(get_logger(),
+    RCLCPP_WARN_THROTTLE(get_logger(),
                          *get_clock(),
                          2*1000UL,
-                         "liveliness lost for nodes: { %s}",
+                         "liveliness lost for nodes: %s",
                          heartbeat_no_liveliness_list_ss.str().c_str());
 
   /* Update system health based on monitoring
