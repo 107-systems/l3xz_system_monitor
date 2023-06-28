@@ -30,12 +30,38 @@ Node::Node()
 {
   declare_parameter("heartbeat_monitor_list", std::vector<std::string>{});
 
-  /* Load a list of all nodes to be monitored from
-   * the JSON configuration file.
-   */
+  init_heartbeat_monitor();
+  init_sub();
+  init_pub();
+
+  _watchdog_loop_rate_monitor = loop_rate::Monitor::create(
+    WATCHDOG_LOOP_RATE,
+    std::chrono::milliseconds(1)
+    );
+  _watchdog_loop_timer = create_wall_timer(
+    WATCHDOG_LOOP_RATE,
+    [this]()
+    {
+      this->watchdog_loop();
+    });
+
+  RCLCPP_INFO(get_logger(), "%s init complete.", get_name());
+}
+
+Node::~Node()
+{
+  RCLCPP_INFO(get_logger(), "%s shut down.", get_name());
+}
+
+/**************************************************************************************
+ * PRIVATE MEMBER FUNCTIONS
+ **************************************************************************************/
+
+void Node::init_heartbeat_monitor()
+{
   std::vector<std::string> const heartbeat_monitor_list = get_parameter("heartbeat_monitor_list").as_string_array();
 
-  for (auto &node : heartbeat_monitor_list)
+  for (auto const & node : heartbeat_monitor_list)
   {
     /* Count all nodes offline until a liveliness signal
      * has been received.
@@ -81,32 +107,7 @@ Node::Node()
 
     RCLCPP_INFO(get_logger(), "heartbeat monitor active for \"%s\".", node.c_str());
   }
-
-  init_sub();
-  init_pub();
-
-  _watchdog_loop_rate_monitor = loop_rate::Monitor::create(
-    WATCHDOG_LOOP_RATE,
-    std::chrono::milliseconds(1)
-    );
-  _watchdog_loop_timer = create_wall_timer(
-    WATCHDOG_LOOP_RATE,
-    [this]()
-    {
-      this->watchdog_loop();
-    });
-
-  RCLCPP_INFO(get_logger(), "%s init complete.", get_name());
 }
-
-Node::~Node()
-{
-  RCLCPP_INFO(get_logger(), "%s shut down.", get_name());
-}
-
-/**************************************************************************************
- * PRIVATE MEMBER FUNCTIONS
- **************************************************************************************/
 
 void Node::init_sub()
 {

@@ -48,6 +48,7 @@ private:
 
   std::map<std::string, heartbeat::Monitor::SharedPtr> _heartbeat_monitor_map;
   std::list<std::string> _heartbeat_liveliness_lost_list;
+  void init_heartbeat_monitor();
 
   rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr _estop_sub;
   bool _is_estop_pressed;
