@@ -1,7 +1,7 @@
 /**
  * Copyright (c) 2023 LXRobotics GmbH.
  * Author: Alexander Entinger <alexander.entinger@lxrobotics.com>
- * Contributors: https://github.com/107-systems/l3xz_watchdog/graphs/contributors.
+ * Contributors: https://github.com/107-systems/l3xz_system_monitor/graphs/contributors.
  */
 
 #pragma once

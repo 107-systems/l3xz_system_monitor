@@ -1,7 +1,7 @@
 #######################################################################################
 cmake_minimum_required(VERSION 3.8)
 #######################################################################################
-project(l3xz_watchdog)
+project(l3xz_system_monitor)
 set(L3XZ_WATCHDOG_TARGET ${PROJECT_NAME}_node)
 #######################################################################################
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")

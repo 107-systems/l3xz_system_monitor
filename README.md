@@ -1,8 +1,8 @@
 <a href="https://107-systems.org/"><img align="right" src="https://raw.githubusercontent.com/107-systems/.github/main/logo/107-systems.png" width="15%"></a>
-:floppy_disk: `l3xz_watchdog`
-==============================
-[![Build Status](https://github.com/107-systems/l3xz_watchdog/actions/workflows/ros2.yml/badge.svg)](https://github.com/107-systems/l3xz_watchdog/actions/workflows/ros2.yml)
-[![Spell Check status](https://github.com/107-systems/l3xz_watchdog/actions/workflows/spell-check.yml/badge.svg)](https://github.com/107-systems/l3xz_watchdog/actions/workflows/spell-check.yml)
+:floppy_disk: `l3xz_system_monitor`
+===================================
+[![Build Status](https://github.com/107-systems/l3xz_system_monitor/actions/workflows/ros2.yml/badge.svg)](https://github.com/107-systems/l3xz_system_monitor/actions/workflows/ros2.yml)
+[![Spell Check status](https://github.com/107-systems/l3xz_system_monitor/actions/workflows/spell-check.yml/badge.svg)](https://github.com/107-systems/l3xz_system_monitor/actions/workflows/spell-check.yml)
 
 This packages supervises the state of all of L3X-Z's ROS sub-systems.
 
@@ -13,17 +13,17 @@ This packages supervises the state of all of L3X-Z's ROS sub-systems.
 #### How-to-build
 ```bash
 cd $COLCON_WS/src
-git clone https://github.com/107-systems/l3xz_watchdog
+git clone https://github.com/107-systems/l3xz_system_monitor
 cd $COLCON_WS
 source /opt/ros/humble/setup.bash
-colcon build --packages-select l3xz_watchdog
+colcon build --packages-select l3xz_system_monitor
 ```
 
 #### How-to-run
 ```bash
 cd $COLCON_WS
 . install/setup.bash
-ros2 launch l3xz_watchdog watchdog.py
+ros2 launch l3xz_system_monitor monitor.py
 ```
 
 #### Interface Documentation
@@ -39,6 +39,6 @@ ros2 launch l3xz_watchdog watchdog.py
 | `/l3xz/light_mode/target` | [`std_msgs/Int8`](https://docs.ros2.org/foxy/api/std_msgs/msg/Int8.html) |
 
 ##### Parameters
-|      Name      |         Default         | Description                                                               |
-|:--------------:|:-----------------------:|---------------------------------------------------------------------------|
-| `config_file` | `watchdog-config.json`  | Complete file path to the JSON file containing the nodes to be monitored. |
+|           Name            |              Default               | Description                                  |
+|:-------------------------:|:----------------------------------:|----------------------------------------------|
+| `heartbeat_monitor_list`  | `['l3xz_joy', 'l3xz_teleop', ...]` | A list containing all nodes to be monitored. |

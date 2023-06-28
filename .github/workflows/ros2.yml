@@ -50,7 +50,7 @@ jobs:
 
     - uses: actions/checkout@v3
       with:
-        path: 'ros2_ws/src/l3xz_watchdog'
+        path: 'ros2_ws/src/l3xz_system_monitor'
 
     - name: colcon build
       run: |

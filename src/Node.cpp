@@ -1,14 +1,14 @@
 /**
  * Copyright (c) 2023 LXRobotics GmbH.
  * Author: Alexander Entinger <alexander.entinger@lxrobotics.com>
- * Contributors: https://github.com/107-systems/l3xz_watchdog/graphs/contributors.
+ * Contributors: https://github.com/107-systems/l3xz_system_monitor/graphs/contributors.
  */
 
 /**************************************************************************************
  * INCLUDE
  **************************************************************************************/
 
-#include <l3xz_watchdog/Node.h>
+#include <l3xz_system_monitor/Node.h>
 
 #include <sstream>
 
@@ -24,7 +24,7 @@ namespace l3xz
  **************************************************************************************/
 
 Node::Node()
-: rclcpp::Node("l3xz_watchdog")
+: rclcpp::Node("l3xz_system_monitor")
 , _system_health{SystemHealth::Nominal}
 , _is_estop_pressed{false}
 {
