@@ -51,6 +51,7 @@ private:
 
   rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr _estop_sub;
   bool _is_estop_pressed;
+  void init_sub();
 
   static int8_t constexpr LIGHT_MODE_OFF   = 0;
   static int8_t constexpr LIGHT_MODE_RED   = 1;

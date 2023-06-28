@@ -82,13 +82,7 @@ Node::Node()
     RCLCPP_INFO(get_logger(), "heartbeat monitor active for \"%s\".", node.c_str());
   }
 
-  _estop_sub = create_subscription<std_msgs::msg::Bool>(
-    "/l3xz/estop/actual",
-    1,
-    [this](std_msgs::msg::Bool::SharedPtr const msg)
-    {
-      _is_estop_pressed = msg->data;
-    });
+  init_sub();
 
   /* Create publisher object to send the desired
    * light mode to the auxiliary controller of
@@ -116,6 +110,18 @@ Node::~Node()
 /**************************************************************************************
  * PRIVATE MEMBER FUNCTIONS
  **************************************************************************************/
+
+
+void Node::init_sub()
+{
+  _estop_sub = create_subscription<std_msgs::msg::Bool>(
+    "/l3xz/estop/actual",
+    1,
+    [this](std_msgs::msg::Bool::SharedPtr const msg)
+    {
+      _is_estop_pressed = msg->data;
+    });
+}
 
 void Node::watchdog_loop()
 {
