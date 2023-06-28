@@ -19,7 +19,7 @@
 #include <std_msgs/msg/bool.hpp>
 #include <std_msgs/msg/int8.hpp>
 
-#include <ros2_heartbeat/Monitor.h>
+#include <ros2_heartbeat/monitor/Monitor.h>
 #include <ros2_loop_rate_monitor/Monitor.h>
 
 /**************************************************************************************
@@ -47,9 +47,16 @@ private:
   SystemHealth _system_health;
 
   std::map<std::string, heartbeat::Monitor::SharedPtr> _heartbeat_monitor_map;
+  enum class NodeLiveliness
+  {
+    Online, Offline
+  };
+  std::map<std::string, NodeLiveliness> _heartbeat_liveliness_map;
+  void init_heartbeat_monitor();
 
   rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr _estop_sub;
   bool _is_estop_pressed;
+  void init_sub();
 
   static int8_t constexpr LIGHT_MODE_OFF   = 0;
   static int8_t constexpr LIGHT_MODE_RED   = 1;
@@ -59,13 +66,12 @@ private:
   static int8_t constexpr LIGHT_MODE_AMBER = 5;
 
   rclcpp::Publisher<std_msgs::msg::Int8>::SharedPtr _light_mode_pub;
+  void init_pub();
 
   static std::chrono::milliseconds constexpr WATCHDOG_LOOP_RATE{100};
   loop_rate::Monitor::SharedPtr _watchdog_loop_rate_monitor;
   rclcpp::TimerBase::SharedPtr _watchdog_loop_timer;
   void watchdog_loop();
-
-  heartbeat::Monitor::SharedPtr create_heartbeat_monitor(std::string const & node, std::chrono::milliseconds const node_timeout);
 };
 
 /**************************************************************************************

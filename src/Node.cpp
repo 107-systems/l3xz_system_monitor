@@ -11,9 +11,6 @@
 #include <l3xz_watchdog/Node.h>
 
 #include <sstream>
-#include <fstream>
-
-#include <nlohmann/json.hpp>
 
 /**************************************************************************************
  * NAMESPACE
@@ -31,30 +28,79 @@ Node::Node()
 , _system_health{SystemHealth::Nominal}
 , _is_estop_pressed{false}
 {
-  declare_parameter("config_file", "watchdog-config.json");
+  declare_parameter("heartbeat_monitor_list", std::vector<std::string>{});
 
-  /* Load a list of all nodes to be monitored from
-   * the JSON configuration file.
-   */
-  std::string const config_file_name = get_parameter("config_file").as_string();
+  init_heartbeat_monitor();
+  init_sub();
+  init_pub();
 
-  std::ifstream json_cfg_if(config_file_name.c_str());
-  if (!json_cfg_if.good()) {
-    RCLCPP_ERROR(get_logger(), "Could not open configuration file \"%s\".", config_file_name.c_str());
-    rclcpp::shutdown();
-    return;
-  }
-  nlohmann::json const watchdog_config = nlohmann::json::parse(json_cfg_if);
-  json_cfg_if.close();
+  _watchdog_loop_rate_monitor = loop_rate::Monitor::create(
+    WATCHDOG_LOOP_RATE,
+    std::chrono::milliseconds(1)
+    );
+  _watchdog_loop_timer = create_wall_timer(
+    WATCHDOG_LOOP_RATE,
+    [this]()
+    {
+      this->watchdog_loop();
+    });
 
-  for (auto &node_entry : watchdog_config["node_list"])
+  RCLCPP_INFO(get_logger(), "%s init complete.", get_name());
+}
+
+Node::~Node()
+{
+  RCLCPP_INFO(get_logger(), "%s shut down.", get_name());
+}
+
+/**************************************************************************************
+ * PRIVATE MEMBER FUNCTIONS
+ **************************************************************************************/
+
+void Node::init_heartbeat_monitor()
+{
+  std::vector<std::string> const heartbeat_monitor_list = get_parameter("heartbeat_monitor_list").as_string_array();
+
+  for (auto const & node : heartbeat_monitor_list)
   {
-    std::string const node = node_entry["node"];
-    size_t const timeout_ms = node_entry["node_timeout_ms"];
+    /* Count all nodes offline until a liveliness signal
+     * has been received.
+     */
+    _heartbeat_liveliness_map[node] = NodeLiveliness::Offline;
 
-    _heartbeat_monitor_map[node] = create_heartbeat_monitor(node, std::chrono::milliseconds(timeout_ms));
+    std::stringstream heartbeat_topic;
+    heartbeat_topic << "/l3xz/" << node << "/heartbeat";
+
+    _heartbeat_monitor_map[node] = heartbeat::Monitor::create(
+      *this,
+      heartbeat_topic.str(),
+      [this, node]()
+      {
+        RCLCPP_ERROR(get_logger(), "liveliness lost for \"%s\".", node.c_str());
+        _heartbeat_liveliness_map[node] = NodeLiveliness::Offline;
+      },
+      [this, node]()
+      {
+        RCLCPP_INFO(get_logger(), "liveliness gained for \"%s\".", node.c_str());
+        _heartbeat_liveliness_map[node] = NodeLiveliness::Online;
+      },
+      [this, node](rclcpp::QOSDeadlineRequestedInfo & event)
+      {
+        RCLCPP_WARN_THROTTLE(get_logger(),
+                             *get_clock(),
+                             5*1000UL,
+                             "deadline missed for \"%s\" (total_count: %d, total_count_change: %d).",
+                             node.c_str(),
+                             event.total_count,
+                             event.total_count_change);
+      });
+
+    RCLCPP_INFO(get_logger(), "heartbeat monitor active for \"%s\".", node.c_str());
   }
+}
 
+void Node::init_sub()
+{
   _estop_sub = create_subscription<std_msgs::msg::Bool>(
     "/l3xz/estop/actual",
     1,
@@ -62,33 +108,14 @@ Node::Node()
     {
       _is_estop_pressed = msg->data;
     });
-
-  /* Create publisher object to send the desired
-   * light mode to the auxiliary controller of
-   * L3X-Z.
-   */
-  _light_mode_pub = create_publisher<std_msgs::msg::Int8>("/l3xz/light_mode/target", 1);
-
-  /* Setup periodically called function to check the
-   * online status (determined via regular received
-   * heartbeat messages) of all nodes under monitoring.
-   */
-  _watchdog_loop_rate_monitor = loop_rate::Monitor::create
-    (WATCHDOG_LOOP_RATE, std::chrono::milliseconds(1));
-  _watchdog_loop_timer = create_wall_timer
-    (std::chrono::milliseconds(WATCHDOG_LOOP_RATE.count()), [this]() { this->watchdog_loop(); });
-
-  RCLCPP_INFO(get_logger(), "Node started successfully.");
 }
 
-Node::~Node()
+void Node::init_pub()
 {
-  RCLCPP_INFO(get_logger(), "Node shut down successfully.");
+  _light_mode_pub = create_publisher<std_msgs::msg::Int8>(
+    "/l3xz/light_mode/target",
+    1);
 }
-
-/**************************************************************************************
- * PRIVATE MEMBER FUNCTIONS
- **************************************************************************************/
 
 void Node::watchdog_loop()
 {
@@ -109,20 +136,20 @@ void Node::watchdog_loop()
    * of those.
    */
   bool is_heartbeat_timeout = false;
-  std::stringstream node_timeout_list_ss;
-  for (auto [node, monitor] : _heartbeat_monitor_map)
-    if (auto [is_timeout, timeout_duration] = monitor->isTimeout(); is_timeout)
+  std::stringstream heartbeat_no_liveliness_list_ss;
+  for (auto const & [node, liveliness] : _heartbeat_liveliness_map)
+    if (liveliness == NodeLiveliness::Offline)
     {
       is_heartbeat_timeout = true;
-      node_timeout_list_ss << "\"" << node << "\" ";
+      heartbeat_no_liveliness_list_ss << "\n\t" << node;
     }
 
   if (is_heartbeat_timeout)
-    RCLCPP_ERROR_THROTTLE(get_logger(),
-                          *get_clock(),
-                          1000,
-                          "heartbeat signal has timed out for nodes: { %s}",
-                          node_timeout_list_ss.str().c_str());
+    RCLCPP_WARN_THROTTLE(get_logger(),
+                         *get_clock(),
+                         2*1000UL,
+                         "liveliness lost for nodes: %s",
+                         heartbeat_no_liveliness_list_ss.str().c_str());
 
   /* Update system health based on monitoring
    * all relevant nodes.
@@ -152,14 +179,6 @@ void Node::watchdog_loop()
   }
 
   _light_mode_pub->publish(light_mode_msg);
-}
-
-heartbeat::Monitor::SharedPtr Node::create_heartbeat_monitor(std::string const & node, std::chrono::milliseconds const node_timeout)
-{
-  std::stringstream heartbeat_topic;
-  heartbeat_topic << "/l3xz/" << node << "/heartbeat";
-
-  return heartbeat::Monitor::create(*this, heartbeat_topic.str(), node_timeout);
 }
 
 /**************************************************************************************
