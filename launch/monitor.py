@@ -6,10 +6,10 @@ from ament_index_python.packages import get_package_share_directory
 def generate_launch_description():
   return LaunchDescription([
     Node(
-      package='l3xz_watchdog',
+      package='l3xz_system_monitor',
       namespace='l3xz',
-      executable='l3xz_watchdog_node',
-      name='l3xz_watchdog',
+      executable='l3xz_system_monitor_node',
+      name='l3xz_system_monitor',
       output='screen',
       emulate_tty=True,
       parameters=[
