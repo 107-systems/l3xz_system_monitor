@@ -47,7 +47,11 @@ private:
   SystemHealth _system_health;
 
   std::map<std::string, heartbeat::Monitor::SharedPtr> _heartbeat_monitor_map;
-  std::list<std::string> _heartbeat_liveliness_lost_list;
+  enum class NodeLiveliness
+  {
+    Online, Offline
+  };
+  std::map<std::string, NodeLiveliness> _heartbeat_liveliness_map;
   void init_heartbeat_monitor();
 
   rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr _estop_sub;

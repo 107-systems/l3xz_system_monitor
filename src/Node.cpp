@@ -66,7 +66,7 @@ void Node::init_heartbeat_monitor()
     /* Count all nodes offline until a liveliness signal
      * has been received.
      */
-    _heartbeat_liveliness_lost_list.push_back(node);
+    _heartbeat_liveliness_map[node] = NodeLiveliness::Offline;
 
     std::stringstream heartbeat_topic;
     heartbeat_topic << "/l3xz/" << node << "/heartbeat";
@@ -77,22 +77,12 @@ void Node::init_heartbeat_monitor()
       [this, node]()
       {
         RCLCPP_ERROR(get_logger(), "liveliness lost for \"%s\".", node.c_str());
-
-        auto const citer = std::find(_heartbeat_liveliness_lost_list.cbegin(),
-                                     _heartbeat_liveliness_lost_list.cend(),
-                                     node);
-        if (citer != _heartbeat_liveliness_lost_list.cend())
-          _heartbeat_liveliness_lost_list.push_back(node);
+        _heartbeat_liveliness_map[node] = NodeLiveliness::Offline;
       },
       [this, node]()
       {
         RCLCPP_INFO(get_logger(), "liveliness gained for \"%s\".", node.c_str());
-
-        auto const citer = std::find(_heartbeat_liveliness_lost_list.cbegin(),
-                                     _heartbeat_liveliness_lost_list.cend(),
-                                     node);
-        if (citer != _heartbeat_liveliness_lost_list.cend())
-          _heartbeat_liveliness_lost_list.erase(citer);
+        _heartbeat_liveliness_map[node] = NodeLiveliness::Online;
       },
       [this, node](rclcpp::QOSDeadlineRequestedInfo & event)
       {
@@ -145,11 +135,15 @@ void Node::watchdog_loop()
    * check if a heartbeat timeout has occurred on any
    * of those.
    */
+  bool is_heartbeat_timeout = false;
   std::stringstream heartbeat_no_liveliness_list_ss;
-  for (auto const &node : _heartbeat_liveliness_lost_list)
-    heartbeat_no_liveliness_list_ss << "\"" << node << "\" ";
+  for (auto const & [node, liveliness] : _heartbeat_liveliness_map)
+    if (liveliness == NodeLiveliness::Offline)
+    {
+      is_heartbeat_timeout = true;
+      heartbeat_no_liveliness_list_ss << "\"" << node << "\" ";
+    }
 
-  bool const is_heartbeat_timeout = _heartbeat_liveliness_lost_list.size() > 0;
   if (is_heartbeat_timeout)
     RCLCPP_WARN_THROTTLE(get_logger(),
                          *get_clock(),
