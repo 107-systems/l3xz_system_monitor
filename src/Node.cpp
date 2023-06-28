@@ -37,6 +37,11 @@ Node::Node()
 
   for (auto &node : heartbeat_monitor_list)
   {
+    /* Count all nodes offline until a liveliness signal
+     * has been received.
+     */
+    _heartbeat_liveliness_lost_list.push_back(node);
+
     std::stringstream heartbeat_topic;
     heartbeat_topic << "/l3xz/" << node << "/heartbeat";
 
