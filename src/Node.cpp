@@ -145,9 +145,9 @@ void Node::watchdog_loop()
     }
 
   if (is_heartbeat_timeout)
-    RCLCPP_WARN_THROTTLE(get_logger(),
+    RCLCPP_INFO_THROTTLE(get_logger(),
                          *get_clock(),
-                         1000,
+                         2*1000UL,
                          "liveliness lost for nodes: { %s}",
                          heartbeat_no_liveliness_list_ss.str().c_str());
 
