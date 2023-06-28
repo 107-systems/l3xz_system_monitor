@@ -61,6 +61,7 @@ private:
   static int8_t constexpr LIGHT_MODE_AMBER = 5;
 
   rclcpp::Publisher<std_msgs::msg::Int8>::SharedPtr _light_mode_pub;
+  void init_pub();
 
   static std::chrono::milliseconds constexpr WATCHDOG_LOOP_RATE{100};
   loop_rate::Monitor::SharedPtr _watchdog_loop_rate_monitor;

@@ -83,34 +83,30 @@ Node::Node()
   }
 
   init_sub();
+  init_pub();
 
-  /* Create publisher object to send the desired
-   * light mode to the auxiliary controller of
-   * L3X-Z.
-   */
-  _light_mode_pub = create_publisher<std_msgs::msg::Int8>("/l3xz/light_mode/target", 1);
+  _watchdog_loop_rate_monitor = loop_rate::Monitor::create(
+    WATCHDOG_LOOP_RATE,
+    std::chrono::milliseconds(1)
+    );
+  _watchdog_loop_timer = create_wall_timer(
+    WATCHDOG_LOOP_RATE,
+    [this]()
+    {
+      this->watchdog_loop();
+    });
 
-  /* Setup periodically called function to check the
-   * online status (determined via regular received
-   * heartbeat messages) of all nodes under monitoring.
-   */
-  _watchdog_loop_rate_monitor = loop_rate::Monitor::create
-    (WATCHDOG_LOOP_RATE, std::chrono::milliseconds(1));
-  _watchdog_loop_timer = create_wall_timer
-    (std::chrono::milliseconds(WATCHDOG_LOOP_RATE.count()), [this]() { this->watchdog_loop(); });
-
-  RCLCPP_INFO(get_logger(), "Node started successfully.");
+  RCLCPP_INFO(get_logger(), "%s init complete.", get_name());
 }
 
 Node::~Node()
 {
-  RCLCPP_INFO(get_logger(), "Node shut down successfully.");
+  RCLCPP_INFO(get_logger(), "%s shut down.", get_name());
 }
 
 /**************************************************************************************
  * PRIVATE MEMBER FUNCTIONS
  **************************************************************************************/
-
 
 void Node::init_sub()
 {
@@ -121,6 +117,13 @@ void Node::init_sub()
     {
       _is_estop_pressed = msg->data;
     });
+}
+
+void Node::init_pub()
+{
+  _light_mode_pub = create_publisher<std_msgs::msg::Int8>(
+    "/l3xz/light_mode/target",
+    1);
 }
 
 void Node::watchdog_loop()
