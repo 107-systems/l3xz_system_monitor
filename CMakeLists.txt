@@ -14,8 +14,6 @@ find_package(std_msgs REQUIRED)
 find_package(ros2_heartbeat REQUIRED)
 find_package(ros2_loop_rate_monitor REQUIRED)
 #######################################################################################
-add_subdirectory(external/json/current)
-#######################################################################################
 include_directories(${L3XZ_WATCHDOG_TARGET}
   include
 )
@@ -27,17 +25,11 @@ add_executable(${L3XZ_WATCHDOG_TARGET}
 #######################################################################################
 target_compile_features(${L3XZ_WATCHDOG_TARGET} PRIVATE cxx_std_17)
 #######################################################################################
-target_link_libraries(${L3XZ_WATCHDOG_TARGET} NLOHMANN_JSON)
-#######################################################################################
 ament_target_dependencies(${L3XZ_WATCHDOG_TARGET} rclcpp std_msgs ros2_heartbeat ros2_loop_rate_monitor)
 #######################################################################################
 install(TARGETS
   ${PROJECT_NAME}_node
   DESTINATION lib/${PROJECT_NAME}
-)
-install(DIRECTORY
-  config
-  DESTINATION share/${PROJECT_NAME}
 )
 install(DIRECTORY
   launch

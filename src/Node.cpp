@@ -11,9 +11,6 @@
 #include <l3xz_watchdog/Node.h>
 
 #include <sstream>
-#include <fstream>
-
-#include <nlohmann/json.hpp>
 
 /**************************************************************************************
  * NAMESPACE
@@ -31,28 +28,49 @@ Node::Node()
 , _system_health{SystemHealth::Nominal}
 , _is_estop_pressed{false}
 {
-  declare_parameter("config_file", "watchdog-config.json");
+  declare_parameter("heartbeat_monitor_list", std::vector<std::string>{});
 
   /* Load a list of all nodes to be monitored from
    * the JSON configuration file.
    */
-  std::string const config_file_name = get_parameter("config_file").as_string();
+  std::vector<std::string> const heartbeat_monitor_list = get_parameter("heartbeat_monitor_list").as_string_array();
 
-  std::ifstream json_cfg_if(config_file_name.c_str());
-  if (!json_cfg_if.good()) {
-    RCLCPP_ERROR(get_logger(), "Could not open configuration file \"%s\".", config_file_name.c_str());
-    rclcpp::shutdown();
-    return;
-  }
-  nlohmann::json const watchdog_config = nlohmann::json::parse(json_cfg_if);
-  json_cfg_if.close();
-
-  for (auto &node_entry : watchdog_config["node_list"])
+  for (auto &node : heartbeat_monitor_list)
   {
-    std::string const node = node_entry["node"];
-    size_t const timeout_ms = node_entry["node_timeout_ms"];
+    std::stringstream heartbeat_topic;
+    heartbeat_topic << "/l3xz/" << node << "/heartbeat";
 
-    _heartbeat_monitor_map[node] = create_heartbeat_monitor(node, std::chrono::milliseconds(timeout_ms));
+    _heartbeat_monitor_map[node] = heartbeat::Monitor::create(
+      *this,
+      heartbeat_topic.str(),
+      [this, node]()
+      {
+        auto const citer = std::find(_heartbeat_liveliness_lost_list.cbegin(),
+                                     _heartbeat_liveliness_lost_list.cend(),
+                                     node);
+        if (citer != _heartbeat_liveliness_lost_list.cend())
+          _heartbeat_liveliness_lost_list.push_back(node);
+      },
+      [this, node]()
+      {
+        auto const citer = std::find(_heartbeat_liveliness_lost_list.cbegin(),
+                                     _heartbeat_liveliness_lost_list.cend(),
+                                     node);
+        if (citer != _heartbeat_liveliness_lost_list.cend())
+          _heartbeat_liveliness_lost_list.erase(citer);
+      },
+      [this, node](rclcpp::QOSDeadlineRequestedInfo & event)
+      {
+        RCLCPP_WARN_THROTTLE(get_logger(),
+                             *get_clock(),
+                             5*1000UL,
+                             "deadline missed for \"%s\" (total_count: %d, total_count_change: %d).",
+                             node.c_str(),
+                             event.total_count,
+                             event.total_count_change);
+      });
+
+    RCLCPP_INFO(get_logger(), "heartbeat monitor active for \"%s\".", node.c_str());
   }
 
   _estop_sub = create_subscription<std_msgs::msg::Bool>(
@@ -108,21 +126,17 @@ void Node::watchdog_loop()
    * check if a heartbeat timeout has occurred on any
    * of those.
    */
-  bool is_heartbeat_timeout = false;
-  std::stringstream node_timeout_list_ss;
-  for (auto [node, monitor] : _heartbeat_monitor_map)
-    if (auto [is_timeout, timeout_duration] = monitor->isTimeout(); is_timeout)
-    {
-      is_heartbeat_timeout = true;
-      node_timeout_list_ss << "\"" << node << "\" ";
-    }
+  std::stringstream heartbeat_no_liveliness_list_ss;
+  for (auto const &node : _heartbeat_liveliness_lost_list)
+    heartbeat_no_liveliness_list_ss << "\"" << node << "\" ";
 
+  bool const is_heartbeat_timeout = _heartbeat_liveliness_lost_list.size() > 0;
   if (is_heartbeat_timeout)
     RCLCPP_ERROR_THROTTLE(get_logger(),
                           *get_clock(),
                           1000,
                           "heartbeat signal has timed out for nodes: { %s}",
-                          node_timeout_list_ss.str().c_str());
+                          heartbeat_no_liveliness_list_ss.str().c_str());
 
   /* Update system health based on monitoring
    * all relevant nodes.
@@ -152,14 +166,6 @@ void Node::watchdog_loop()
   }
 
   _light_mode_pub->publish(light_mode_msg);
-}
-
-heartbeat::Monitor::SharedPtr Node::create_heartbeat_monitor(std::string const & node, std::chrono::milliseconds const node_timeout)
-{
-  std::stringstream heartbeat_topic;
-  heartbeat_topic << "/l3xz/" << node << "/heartbeat";
-
-  return heartbeat::Monitor::create(*this, heartbeat_topic.str(), node_timeout);
 }
 
 /**************************************************************************************
